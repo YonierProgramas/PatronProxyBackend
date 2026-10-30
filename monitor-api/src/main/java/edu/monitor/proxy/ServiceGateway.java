@@ -18,7 +18,8 @@ public class ServiceGateway {
       @Value("${inventory.service.url}") String inventory,
       @Value("${order.service.url}") String orders,
       @Value("${payment.service.url}") String payments,
-      @Value("${internal.timeout.ms}") int timeout) {
+      @Value("${internal.timeout.ms}") int timeout,
+      @Value("${internal.service.token:}") String internalToken) {
     proxies =
         Map.of(
             "inventory",
@@ -28,19 +29,28 @@ public class ServiceGateway {
                     inventory,
                     timeout,
                     mapper,
-                    Set.of("listProducts", "getStock", "addStock", "removeStock")),
+                    Set.of("listProducts", "getStock", "addStock", "removeStock"),
+                    internalToken),
                 store),
             "orders",
             new LoggingProxy<>(
                 "orders",
                 new HttpServiceClient(
-                    orders, timeout, mapper, Set.of("createOrder", "getOrder", "listOrders")),
+                    orders,
+                    timeout,
+                    mapper,
+                    Set.of("createOrder", "getOrder", "listOrders"),
+                    internalToken),
                 store),
             "payments",
             new LoggingProxy<>(
                 "payments",
                 new HttpServiceClient(
-                    payments, timeout, mapper, Set.of("processPayment", "getPayment")),
+                    payments,
+                    timeout,
+                    mapper,
+                    Set.of("processPayment", "getPayment"),
+                    internalToken),
                 store));
   }
 

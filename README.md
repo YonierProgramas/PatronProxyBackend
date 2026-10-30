@@ -38,13 +38,11 @@ flowchart LR
 
 El módulo común también comparte soporte HTTP pequeño para mantener respuestas uniformes; no comparte negocio ni almacenes. Los tres negocios son procesos y artefactos distintos. Los datos de negocio viven en memoria segura ante concurrencia y se pierden al reiniciar cada servicio. La auditoría local es persistente y puede sobrevivir a esos reinicios: un log histórico no implica que el pedido o pago siga en memoria.
 
-## Despliegue preparado en Render
+## Despliegue preparado en Render Free
 
-La plataforma backend cambia de Railway a **Render**; frontend continúa en Vercel. Se mantienen las cuatro aplicaciones, LoggingProxy, contratos y endpoints. Crear tres Private Services de negocio, un Web Service monitor-api y un Render Postgres, todos en la misma región. Solo monitor-api será público.
+El usuario autorizó cuatro Web Services **Free**, con negocios públicos protegidos por INTERNAL_SERVICE_TOKEN, al conocer la ausencia de Private Services gratuitos. Se mantienen las cuatro JVM, LoggingProxy y endpoints. render.yaml contiene únicamente planes Free y PostgreSQL Free temporal; render.paid.example.yaml queda como referencia inactiva.
 
-`render.paid.example.yaml` describe recursos **de pago** y deja auto-deploy desactivado. No se ha aplicado; su publicación como código fuente fue autorizada por el usuario. El Blueprint requiere revisar costes y completar CORS antes de cualquier creación; aplicarlo puede crear recursos facturables y realizar el primer despliegue aunque auto-deploy esté desactivado.
-
-Dockerfiles usan contexto raíz y Maven `-pl <module> -am`, Java 21 y un entrypoint que deriva URLs HTTP privadas y JDBC desde referencias de Render. Cada aplicación escucha `0.0.0.0` y el valor de `PORT`; monitor-api usa perfil prod y Flyway sobre PostgreSQL, con pool limitado a cinco conexiones. [Guía completa, costes, variables y validación](DEPLOYMENT.md).
+Las llamadas internas requieren el mismo secreto fuerte en los cuatro procesos; nunca se envía al frontend. Prod no arranca si falta. El gateway usa las tres URLs HTTPS reales de los negocios; la DB usa conexión privada JDBC. Vercel conserva VITE_API_BASE_URL y CORS del dominio real. No se seleccionan recursos pagos. [Pasos, límites, variables y validación](DEPLOYMENT.md). Los despliegues y URL públicas siguen pendientes de conexión y verificación.
 
 ## Requisitos locales
 

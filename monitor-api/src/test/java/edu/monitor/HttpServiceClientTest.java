@@ -14,12 +14,15 @@ import org.junit.jupiter.api.*;
 
 class HttpServiceClientTest {
   @Test
-  void realHttpSuccessAndInternalRequestId() throws Exception {
+  void realHttpSuccessAndInternalRequestIdAndToken() throws Exception {
     var server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
     server.createContext(
         "/internal/getStock",
         exchange -> {
           assertNotNull(UUID.fromString(exchange.getRequestHeaders().getFirst("X-Request-Id")));
+          assertEquals(
+              "test-only-client-secret-at-least-32-characters",
+              exchange.getRequestHeaders().getFirst("X-Internal-Service-Token"));
           var body = "{\"requestId\":\"test\",\"response\":{\"stock\":30}}".getBytes();
           exchange.sendResponseHeaders(200, body.length);
           exchange.getResponseBody().write(body);
@@ -32,7 +35,8 @@ class HttpServiceClientTest {
               "http://127.0.0.1:" + server.getAddress().getPort(),
               500,
               new ObjectMapper(),
-              Set.of("getStock"));
+              Set.of("getStock"),
+              "test-only-client-secret-at-least-32-characters");
       assertEquals(Map.of("stock", 30), client.execute("getStock", Map.of("productId", "SKU-001")));
       assertThrows(ServiceException.class, () -> client.execute("unknown"));
     } finally {
@@ -81,7 +85,8 @@ class HttpServiceClientTest {
             "http://127.0.0.1:1",
             "http://127.0.0.1:1",
             "http://127.0.0.1:1",
-            50);
+            50,
+            "");
     for (String id : List.of("inventory", "orders", "payments"))
       assertThrows(
           ServiceException.class,

@@ -15,9 +15,20 @@ public class HttpServiceClient implements MicroserviceProxy<Object> {
   private final HttpClient client;
   private final ObjectMapper mapper;
   private final Set<String> operations;
+  private final String internalToken;
 
   public HttpServiceClient(
       String base, int timeoutMs, ObjectMapper mapper, Set<String> operations) {
+    this(base, timeoutMs, mapper, operations, "");
+  }
+
+  public HttpServiceClient(
+      String base,
+      int timeoutMs,
+      ObjectMapper mapper,
+      Set<String> operations,
+      String internalToken) {
+    this.internalToken = internalToken;
     URI uri = URI.create(base);
     if (!List.of("http", "https").contains(uri.getScheme())
         || uri.getHost() == null
@@ -36,7 +47,7 @@ public class HttpServiceClient implements MicroserviceProxy<Object> {
   public Object execute(String operation, Object... params) {
     if (!operations.contains(operation)) throw Inputs.unknown();
     try {
-      var request =
+      var builder =
           HttpRequest.newBuilder(URI.create(base + "/internal/" + operation))
               .timeout(timeout)
               .header("Content-Type", "application/json")
@@ -46,9 +57,10 @@ public class HttpServiceClient implements MicroserviceProxy<Object> {
                       .orElseGet(() -> UUID.randomUUID().toString()))
               .POST(
                   HttpRequest.BodyPublishers.ofString(
-                      mapper.writeValueAsString(Map.of("params", params))))
-              .build();
-      var response = client.send(request, HttpResponse.BodyHandlers.ofString());
+                      mapper.writeValueAsString(Map.of("params", params))));
+      if (!internalToken.isEmpty())
+        builder.header(edu.monitor.web.InternalServiceFilter.HEADER, internalToken);
+      var response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
       var body = mapper.readTree(response.body());
       if (response.statusCode() >= 400)
         throw new ServiceException(

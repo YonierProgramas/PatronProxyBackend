@@ -95,3 +95,7 @@ $body = @{ params = @(@{ productId = 'SKU-001' }) } | ConvertTo-Json -Depth 5
 Invoke-RestMethod -Method Post -Uri 'http://localhost:8080/api/services/inventory/getStock' -ContentType 'application/json' -Body $body
 Invoke-RestMethod -Uri 'http://localhost:8080/api/metrics/summary'
 ```
+
+## Protección entre servicios en la variante Free
+
+/internal/** de los negocios requiere X-Internal-Service-Token en prod; falta o valor incorrecto devuelve 401 INTERNAL_UNAUTHORIZED. El gateway lo agrega internamente. El frontend continúa usando exclusivamente /api/** y nunca recibe ese secreto. Las rutas públicas del taller no cambian.

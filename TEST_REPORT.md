@@ -92,3 +92,11 @@ El 30 de octubre de 2026 se ejecutó nuevamente Maven Wrapper verify: **BUILD SU
 Evidencia: docs/RENDER_CHECK_RESULT.json. Docker no está instalado: **no se construyeron imágenes Docker**. PostgreSQL y endpoints públicos todavía no se verificaron.
 
 El Blueprint se conserva como **render.paid.example.yaml**, sin descubrimiento automático como render.yaml: describe la topología privada que requiere pago y **no se aplica** bajo la restricción vigente de no seleccionar recursos pagos. No se altera silenciosamente el taller para eludir el coste.
+
+## Variante Free pública protegida — autorización posterior del usuario
+
+Maven Wrapper verify: **BUILD SUCCESS, 32/32 pruebas**. Se añadieron siete pruebas de InternalServiceFilter: secreto válido, falta/valor incorrecto, normalización de ruta, configuración prod obligatoria, salud/API abiertas, compatibilidad local y UUID en rechazo. La prueba HTTP de HttpServiceClient confirma que se envía el header secreto al delegado. No se cambian contratos ni negocio del Proxy.
+
+La aceptación de cuatro procesos reales se ejecutó con un secreto aleatorio solo en memoria: los tres negocios devolvieron 401 sin credencial, health permaneció abierto, el gateway delegó correctamente y la simulación generó exactamente **50 registros adicionales**. No se encontró el token generado en los logs. Evidencia completa: docs/FREE_AUTH_SMOKE_RESULT.json. Los procesos se detuvieron al finalizar. Esto es HTTP local real, **no despliegue Render**.
+
+render.yaml activo: cuatro Web Services Free y Postgres Free; validado con el esquema oficial de Render. URLs públicas de los negocios y CORS quedan pendientes de valores reales. El ejemplo pagado queda inactivo. Frontend conserva 20/20 y build aprobado; no se repitieron pruebas UI sin cambios de comportamiento. No se contrataron recursos.

@@ -1,6 +1,6 @@
 {
   "result": "PASS",
-  "totalTests": 25,
+  "totalTests": 32,
   "suites": [
     {
       "name": "edu.monitor.InventoryServiceTest",
@@ -54,6 +54,13 @@
     {
       "name": "edu.monitor.PaymentServiceTest",
       "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "edu.monitor.InternalServiceFilterTest",
+      "tests": "7",
       "failures": "0",
       "errors": "0",
       "skipped": "0"

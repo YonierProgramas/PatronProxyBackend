@@ -46,3 +46,7 @@
 - URL pública del frontend y API verificadas con operación UUID y lote +50.
 
 No se puede considerar el taller completamente entregado sin los dos repositorios remotos y ambas URL reales verificadas.
+
+## Variante Render Free aprobada explícitamente
+
+El usuario autorizó cuatro Web Services Free, con los tres negocios públicos protegidos por un secreto compartido, ante la ausencia de Private Services gratuitos. Se mantienen procesos y Proxy; no es un cambio silencioso de arquitectura. El Blueprint activo render.yaml usa únicamente plan free; PostgreSQL Free vence a los 30 días. La prueba productiva sigue pendiente de conexión de los proveedores y URL reales.

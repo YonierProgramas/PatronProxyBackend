@@ -1,52 +1,57 @@
-# Despliegue backend en Render
+# Render Free + Vercel — variante autorizada
 
-Plataforma actual: **Render**. Sustituye a Railway por decisión del usuario, sin cambiar el taller. Frontend continúa en Vercel. El usuario autorizó commits y push de esta preparación. **No se creó infraestructura ni se contrató un plan**; la restricción de no usar recursos de pago sigue vigente. Los dos repositorios oficiales siguen siendo:
+El usuario autorizó explícitamente usar **cuatro Web Services gratuitos**, con endpoints internos de negocio protegidos por un secreto, después de informar que Render Free no admite Private Services. Se conservan InventoryService, OrderService, PaymentService, LoggingProxy, cuatro JVM independientes, PostgreSQL de auditoría y todos los endpoints públicos. No se contratan recursos de pago.
 
-- Backend: https://github.com/YonierProgramas/PatronProxyBackend
-- Frontend: https://github.com/YonierProgramas/PatronProxyFrontend
+Repositorios: [backend](https://github.com/YonierProgramas/PatronProxyBackend), [frontend](https://github.com/YonierProgramas/PatronProxyFrontend). Frontend sigue en Vercel. No hay URL pública verificada todavía; consultar DEPLOYMENT_STATUS.md.
 
-## 1. Arquitectura y recursos manuales
+## Recursos manuales, todos Free
 
-Crear estos cinco recursos, en el mismo workspace y región (el ejemplo usa Oregon):
+| Recurso | Tipo | Dockerfile | Salud |
+| --- | --- | --- | --- |
+| inventory-service | Web Service Free | Dockerfile.inventory-service | /actuator/health |
+| order-service | Web Service Free | Dockerfile.order-service | /actuator/health |
+| payment-service | Web Service Free | Dockerfile.payment-service | /actuator/health |
+| monitor-api | Web Service Free | Dockerfile.monitor-api | /actuator/health |
+| proxy-audit-db | Render Postgres Free, versión 16 | no aplica | indicador del proveedor |
 
-| Nombre sugerido | Tipo en Render | Plan del Blueprint | Dockerfile / dato | Exposición |
-| --- | --- | --- | --- | --- |
-| inventory-service | Private Service | 0.5c-512mb | Dockerfile.inventory-service | privada |
-| order-service | Private Service | 0.5c-512mb | Dockerfile.order-service | privada |
-| payment-service | Private Service | 0.5c-512mb | Dockerfile.payment-service | privada |
-| monitor-api | Web Service | 0.5c-512mb | Dockerfile.monitor-api | HTTPS público |
-| proxy-audit-db | Render Postgres | 0.1c-256mb, disco 1 GB | PostgreSQL 16 | privada |
+Mismo workspace y región (ejemplo Oregon), una instancia por aplicación. Los tres negocios tendrán URL pública HTTPS por limitación del plan, pero `/internal/**` exige X-Internal-Service-Token. El frontend solo utiliza monitor-api. No se reemplazan tres servicios por clases en una sola aplicación.
 
-No usar Background Workers para los tres negocios: necesitan recibir HTTP. Mantener una instancia por aplicación; sus almacenes en memoria y el limitador de simulación no son distribuidos. Solo monitor-api accede a PostgreSQL. Las existencias, pedidos y pagos se reinician con su proceso; los logs permanecen en la base.
+## Seguridad interna
 
-Fuentes: [Private Services](https://render.com/docs/private-services), [red privada](https://render.com/docs/private-network), [planes vigentes](https://render.com/docs/compute-plans).
+`INTERNAL_SERVICE_TOKEN`: mismo valor aleatorio de **32 caracteres como mínimo** en las cuatro aplicaciones, exclusivamente en Render. En prod, una aplicación sin un token válido no arranca. InternalServiceFilter rechaza solicitudes internas sin el token correcto con 401/INTERNAL_UNAUTHORIZED, conserva requestId y nunca devuelve la credencial. HttpServiceClient agrega el header al delegar; LoggingProxy sigue auditando la invocación del gateway una sola vez. El token no se almacena en inputParams/response ni se envía al navegador.
 
-## 2. Costes y límites, consultados el 30 de octubre de 2026
+Healthcheck permanece abierto, sin detalles. Las rutas `/api/**` del gateway continúan públicas para la demostración académica; este secreto protege la comunicación interna, no es un login de usuarios. En local/test se permite token vacío para conservar la ejecución local previa; cualquier token configurado activa la protección. **No poner INTERNAL_SERVICE_TOKEN en VITE_, GitHub, comentarios, logs ni este documento.**
 
-| Recurso | Cantidad | Precio base de referencia USD/mes |
-| --- | ---: | ---: |
-| Aplicación 0.5c-512mb (antes Starter) | 4 × 7 | 28 |
-| PostgreSQL 0.1c-256mb (antes Basic-256mb) | 1 × 6 | 6 |
-| Disco PostgreSQL 1 GB | 1 × 0.30 | 0.30 |
-| **Estimación base de la arquitectura completa** | | **34.30** |
+El Blueprint genera el token en inventory-service y lo referencia mediante fromService/envVarKey en los otros tres. En creación manual, generar uno con el gestor de secretos del proveedor y copiar exactamente el mismo valor a los cuatro recursos.
 
-Es una estimación calculada, no una cotización ni una contratación. Excluye impuestos, uso adicional, transferencia, minutos de build, un eventual workspace de pago y aumentos de recursos. Cada Java dispone de 512 MB y 0.5 CPU; la DB, 256 MB y 0.1 CPU. La suficiencia del tamaño para la carga real debe medirse. Si requiere más memoria, revisar presupuesto antes de cambiar plan. Confirmar precios en el Dashboard antes de crear recursos. Fuentes: [precios oficiales](https://render.com/pricing), [ejemplo oficial con precios de aplicación y Postgres](https://render.com/articles/production-rails-hosting-guide).
+## Variables
 
-**No hay una opción íntegramente gratuita que conserve esta topología privada.** Private Services no tienen plan Free. Web Free se suspende tras 15 minutos inactivo, comparte 750 horas mensuales por workspace y no recibe tráfico privado. Puede enviar solicitudes privadas a servicios pagos de su región. No agrupar los tres negocios en un proceso ni volverlos públicos para ocultar el coste.
+En los cuatro servicios: `PORT=10000`, `SPRING_PROFILES_ACTIVE=prod`, `INTERNAL_SERVICE_TOKEN=<secreto compartido>`. Cada contenedor escucha 0.0.0.0 y lee PORT; no compartir procesos ni fijar el puerto en Java. No elegir puertos reservados de Render.
 
-PostgreSQL Free: una instancia por workspace, 1 GB, vence a los 30 días; tras vencer hay 14 días para actualizar antes de borrado. Sin backups ni pooling administrado. Puede reiniciarse o estar temporalmente indisponible por mantenimiento. No es persistencia duradera para una entrega que deba mantenerse. Fuente: [límites Free oficiales](https://render.com/docs/free).
+Solo monitor-api:
 
-No se eligió una variante Free en el Blueprint. Contratar cualquier recurso requiere aprobación previa del usuario.
+| Variable | Valor |
+| --- | --- |
+| INVENTORY_SERVICE_URL | origen HTTPS **real y público** del Web Service de inventario |
+| ORDER_SERVICE_URL | origen HTTPS **real y público** de pedidos |
+| PAYMENT_SERVICE_URL | origen HTTPS **real y público** de pagos |
+| CORS_ALLOWED_ORIGINS | origen real de Vercel, sin slash final ni comodines; varios separados por comas sin espacios |
+| INTERNAL_TIMEOUT_MS | 10000 inicialmente, ajustable; sin reintentos de POST |
+| SIMULATION_COOLDOWN_MS | 10000 |
+| DB_MAX_POOL_SIZE | 5 |
+| SPRING_DATASOURCE_URL | jdbc:postgresql://HOST_INTERNO_DB:5432/NOMBRE_DB?sslmode=require |
+| SPRING_DATASOURCE_USERNAME | usuario PostgreSQL del proveedor |
+| SPRING_DATASOURCE_PASSWORD | secreto PostgreSQL del proveedor |
 
-## 3. Docker y Maven multimódulo
+El Blueprint inyecta alternativamente PGHOST, PGPORT y PGDATABASE y utiliza tools/render-entrypoint.sh para formar JDBC. No copiar postgres://usuario:password@host/db directamente como JDBC. La conexión a PostgreSQL sí usa la red interna: Free Web puede enviar tráfico privado a su base. El Blueprint deshabilita acceso externo de DB con ipAllowList vacío. TLS interno usa sslmode=require; certificados internos autofirmados no admiten verify-full. [Conexión PostgreSQL oficial](https://render.com/docs/postgresql-creating-connecting).
 
-Cada servicio usa el mismo repositorio backend y rama main, **Root Directory vacío/raíz**, Docker Context `.` y su propio Dockerfile. No elegir la carpeta del módulo como contexto: necesita pom.xml raíz, shared-contracts y los POM de los módulos del reactor.
+Las variables *_SERVICE_HOSTPORT del ejemplo privado **no deben usarse en Free**: los Web Services Free no reciben tráfico privado. Para ellos se requieren los tres orígenes HTTPS reales anteriores. En prod no hay fallback de destinos a localhost ni de datasource a H2. Flyway migra V1; no ddl-auto=create ni consola H2. Solo monitor-api tiene credenciales de DB.
 
-La etapa builder usa Maven 3.9.9/Java 21 y ejecuta `mvn -B -ntp -pl <module> -am package -DskipTests`. La etapa final copia únicamente el JAR correspondiente y el entrypoint, usa Java 21 JRE, usuario 10001 y heap limitado por porcentaje del contenedor. No copiar JARs manualmente ni definir Build Command o Start Command de un runtime Java nativo: seleccionar **Docker** y conservar el ENTRYPOINT del archivo. Las pruebas se ejecutan por separado con `./mvnw verify` antes de publicar.
+## Maven y Docker
 
-`tools/render-entrypoint.sh` conserva URLs explícitas; si faltan, convierte referencias host:port en URLs HTTP. Construye JDBC desde PGHOST/PGPORT/PGDATABASE y ejecuta Java con exec para recibir SIGTERM. No imprime credenciales. `.dockerignore` excluye datos, .env, Git, logs y target.
+Todos los Web Services usan el mismo repositorio backend, main, runtime Docker, **Root Directory vacío/raíz**, Docker Context `.`, y el Dockerfile de su fila. No usar la subcarpeta del módulo como contexto: el build necesita pom.xml raíz, shared-contracts y los POM del reactor.
 
-Docker builds reproducibles desde la raíz backend, cuando Docker esté disponible:
+Build interno: `mvn -B -ntp -pl <module> -am package -DskipTests`. Pruebas separadas con Maven Wrapper verify. JRE Java 21, usuario no root 10001, memoria por porcentaje y entrypoint con exec para SIGTERM. No copiar JARs manualmente ni reemplazar Start Command: usar el ENTRYPOINT.
 
 ```bash
 docker build -f Dockerfile.inventory-service -t proxy-inventory .
@@ -55,70 +60,43 @@ docker build -f Dockerfile.payment-service -t proxy-payments .
 docker build -f Dockerfile.monitor-api -t proxy-monitor .
 ```
 
-Estos comandos funcionan también en PowerShell desde la misma raíz. Docker no se instaló ni ejecutó en este entorno: la coherencia de archivos/contexto se comprueba localmente; un build Docker real queda pendiente.
+Mismos comandos válidos en PowerShell desde la raíz backend. Docker no está disponible aquí: coherencia de los cuatro Dockerfiles y esquema oficial del Blueprint comprobados, build real de imágenes pendiente.
 
-## 4. Puerto y salud
+## Despliegue manual en orden
 
-Todos los módulos escuchan en `0.0.0.0` y `server.port=${PORT:<puerto local>}`. El Blueprint establece `PORT=10000` en cada contenedor; son procesos aislados, por lo que no hay conflicto. Si el Dashboard asigna otro PORT, Spring lo utiliza y las URLs privadas deben incluir el mismo puerto. No fijar localhost ni confundir EXPOSE con el puerto de escucha.
+1. Instalar y conectar Render y Vercel dentro de ChatGPT con permisos sobre YonierProgramas, si se desea que el agente ejecute el despliegue. Iniciar sesión solo en sus webs no habilita ese acceso. Nunca compartir tokens en el chat. También es posible completar estos pasos personalmente en los Dashboards.
+2. Confirmar que el main publicado contiene render.yaml y la protección interna. Seleccionar siempre plan **Free** y detenerse si Render exige un plan pago o un cargo no autorizado.
+3. Crear Postgres Free en la región elegida. Guardar sus datos internos en variables privadas. Registrar su fecha de vencimiento.
+4. Crear primero los tres negocios como Web Services Docker Free con sus Dockerfiles, perfil prod, PORT y el mismo secreto fuerte. Health Check Path /actuator/health. Auto-deploy desactivado para controlar esta entrega.
+5. Copiar sus tres orígenes HTTPS reales del Dashboard. Esperar que arranquen. Una solicitud directa a /internal/getStock sin secreto debe recibir 401; health debe recibir UP.
+6. Crear monitor-api Free con perfil prod, mismo secreto, esos tres orígenes, DB y CORS explícito. Hasta tener Vercel puede usarse provisionalmente http://localhost:5173, sustituyéndolo por el dominio final antes de la prueba pública.
+7. Esperar migración Flyway y salud UP del gateway. Copiar su origen HTTPS real.
+8. En Vercel importar PatronProxyFrontend, framework Vite, root del repo, npm ci, build npm run build, output dist. Configurar VITE_API_BASE_URL con el origen real del gateway, **sin /api**. No exponer secretos internos ni DB.
+9. Desplegar frontend, copiar su dominio real y autorizarlo en CORS_ALLOWED_ORIGINS del gateway. Aplicar la configuración y probar el flujo.
 
-- Web Service monitor-api: configurar **Health Check Path `/actuator/health`**. Comprueba salud del proceso y datasource, sin detalles sensibles.
-- Private Services: Render utiliza healthchecks **TCP**, no `healthCheckPath`. Cada negocio conserva `/actuator/health` para consulta HTTP desde la red privada. Un TCP abierto no prueba las operaciones: validarlas a través de monitor-api.
-- El health de monitor-api no prueba automáticamente los tres servicios remotos. Ejecutar llamadas reales después de desplegar.
+### Blueprint gratuito
 
-Fuentes: [puerto del Web Service](https://render.com/docs/web-services), [healthchecks y restricciones para privados](https://render.com/docs/health-checks).
+`render.yaml` contiene cuatro Web Services plan free y una DB plan free. No selecciona recursos pagos. Los tres *_SERVICE_URL y CORS usan sync:false para introducir los valores reales del Dashboard; no hay dominios supuestos. Para evitar problemas al introducir URLs aún inexistentes, se recomienda la secuencia manual anterior o crear primero los negocios y completar después el gateway al sincronizar el Blueprint. No se deben inventar URLs de antemano.
 
-## 5. Variables por recurso
+`autoDeployTrigger: off` deshabilita despliegues futuros por push, pero crear/sincronizar el Blueprint sí ejecuta el primero. El ejemplo privado pago anterior se conserva únicamente como render.paid.example.yaml y **no se aplica**. [Especificación oficial](https://render.com/docs/blueprint-spec).
 
-Los tres Private Services solo necesitan `PORT=10000`. El Dockerfile define JAVA_TOOL_OPTIONS; no introducir secretos en esa variable. No asignar credenciales de DB a los negocios.
+## Límites Free y presupuesto
 
-En monitor-api:
+Consultado el 30 de octubre de 2026: Web Free se suspende tras 15 minutos inactivo; despertar puede tardar aproximadamente un minuto. El workspace comparte **750 horas mensuales** entre sus Web Services: cuatro siempre encendidos consumirían aproximadamente 2880 horas en 30 días. También hay límites de transferencia/build y posibles suspensiones. No usar pings artificiales para mantenerlos activos. No añadir recursos pagos ni aceptar sobrecostes; revisar límites y gasto en el Dashboard.
 
-| Variable | Valor / origen |
-| --- | --- |
-| PORT | 10000 o el puerto configurado en Render |
-| SPRING_PROFILES_ACTIVE | prod |
-| CORS_ALLOWED_ORIGINS | origen HTTPS real de Vercel, sin slash final ni comodines; varios separados por comas sin espacios |
-| INTERNAL_TIMEOUT_MS | 10000 en esta propuesta; configurable, sin reintentos de POST |
-| SIMULATION_COOLDOWN_MS | 10000 |
-| DB_MAX_POOL_SIZE | 5 |
-| INVENTORY_SERVICE_URL | http://HOST_PRIVADO_REAL:PUERTO_REAL de inventory-service |
-| ORDER_SERVICE_URL | http://HOST_PRIVADO_REAL:PUERTO_REAL de order-service |
-| PAYMENT_SERVICE_URL | http://HOST_PRIVADO_REAL:PUERTO_REAL de payment-service |
-| SPRING_DATASOURCE_URL | jdbc:postgresql://HOST_INTERNO_DB:5432/NOMBRE_DB?sslmode=require |
-| SPRING_DATASOURCE_USERNAME | usuario de Render Postgres |
-| SPRING_DATASOURCE_PASSWORD | secreto de Render Postgres, solo en Render |
+Postgres Free: una instancia por workspace, 1 GB, vence a los 30 días, sin backups ni pooling administrado. Tras vencer hay 14 días para actualizar antes de borrado. Es una demostración temporal, no una base gratuita permanente. [Límites oficiales](https://render.com/docs/free).
 
-Los valores HOST_PRIVADO_REAL, PUERTO_REAL, HOST_INTERNO_DB y NOMBRE_DB son marcadores, no URLs creadas. Copiarlos de los recursos reales. Nunca apuntar los clientes a URLs públicas de negocios si la red privada está disponible.
+Los arranques en frío de los negocios pueden producir UPSTREAM_TIMEOUT/504 antes de que despierten. Esperar salud UP de los tres antes de la demostración y realizar una operación manual. No reintentar automáticamente un POST, dado que podría haber tenido efectos. La simulación sigue ejecutando exactamente 50 intentos y registra sus resultados reales incluso si un servicio está frío.
 
-**Alternativa automática del Blueprint:** en lugar de las tres *_SERVICE_URL, usa INVENTORY_SERVICE_HOSTPORT, ORDER_SERVICE_HOSTPORT y PAYMENT_SERVICE_HOSTPORT mediante fromService/hostport. Para JDBC usa PGHOST, PGPORT y PGDATABASE mediante fromDatabase; usuario y password se inyectan directamente en sus variables Spring. El entrypoint agrega los prefijos http:// y jdbc:postgresql://. Una variable completa explícita tiene prioridad. No copiar el postgres:// que contiene usuario/password directamente a SPRING_DATASOURCE_URL.
+Referencia de la topología privada anterior, **no contratada**: cuatro instancias de 7 USD + PostgreSQL 6 USD + disco 1 GB 0.30 USD ≈ 34.30 USD/mes antes de extras/impuestos; los IDs actuales son 0.5c-512mb y 0.1c-256mb. Confirmar precios si en el futuro se autoriza pago. [Precios oficiales](https://render.com/pricing).
 
-En prod se requieren datasource y destinos; no hay fallback silencioso a H2 ni localhost. Flyway ejecuta V1__audit.sql, no ddl-auto=create. Pool máximo 5, mínimo 1. No habilitar consola H2. PostgreSQL interno admite TLS con sslmode=require; los certificados internos autofirmados no admiten verify-full. Restringir acceso externo de DB: el Blueprint usa ipAllowList vacío. Fuente: [conexión y TLS PostgreSQL](https://render.com/docs/postgresql-creating-connecting).
+## Prueba productiva obligatoria
 
-## 6. Creación manual paso a paso (solo tras autorización)
+1. Health UP en cuatro aplicaciones y PostgreSQL activo. Sin secreto, los tres /internal/** devuelven 401; health no expone datos.
+2. GET /api/metrics/summary: tres servicios, sin logs fabricados; en DB nueva tasas/promedio null y total cero. Polling no aumenta llamadas.
+3. Una operación real de inventario mediante gateway devuelve UUID; localizar una sola entrada, duración y respuesta en logs. Crear/consultar pedido y pago ficticios. 503 SIMULATED_FAILURE de pagos es esperado y debe registrarse ERROR.
+4. Capturar total de llamadas, POST /api/metrics/simulate-load con {}, comprobar requestedCalls=completedCalls=50 y aumento exacto +50, sin otros operadores ejecutando negocios. UUID por llamada distintos. No exigir cinco fallos: probabilidad 0.10 por llamada válida de pagos.
+5. Desde Vercel: tarjetas, gráfica, filtros, detalles, simulación y polling con datos reales. Confirmar preflight CORS del dominio real, rechazo de orígenes ajenos y ausencia de credenciales internas en navegador.
+6. Reiniciar gateway y comprobar que logs persisten en PostgreSQL. Negocios en memoria se reinician con sus propios procesos, como permite el taller. Verificar fechas UTC, paginación y métricas consistentes.
 
-1. Autorizar primero el presupuesto. Publicar los cambios preparados en el repositorio backend con la autorización del usuario ya recibida; confirmar el commit main antes de crear servicios.
-2. Entrar al workspace Render y elegir una misma región para los cinco recursos.
-3. Crear Render Postgres proxy-audit-db, PostgreSQL 16, plan revisado y 1 GB de disco. Conservar host interno, puerto, database, user y password; restringir conexiones externas. No poner secretos en GitHub.
-4. Crear inventory-service, order-service y payment-service como Private Service, runtime Docker, mismo repositorio backend y main, contexto raíz. Seleccionar Dockerfile de la tabla, plan autorizado, una instancia y PORT. Desactivar auto-deploy por ahora. Esperar que cada uno esté listo por TCP.
-5. Copiar host:port privado de cada recurso desde el Dashboard; no inventar dominios ni omitir el puerto.
-6. Crear monitor-api como Web Service Docker desde el mismo repo raíz, elegir Dockerfile.monitor-api, plan autorizado y una instancia. Configurar todas las variables de la sección anterior, perfil prod y health HTTP. Usar un CORS explícito provisional como http://localhost:5173 solo si todavía no hay dominio Vercel; sustituirlo por el origen real antes de validar frontend público.
-7. Desplegar manualmente solo cuando esté autorizado. Revisar logs de arranque, migración Flyway y health. No registrar ni compartir contraseñas.
-8. Copiar la URL HTTPS real de monitor-api y configurar VITE_API_BASE_URL en Vercel desde el repositorio frontend independiente. Valor = origen, sin /api. Reconstruir frontend al cambiar variable.
-9. Autorizar dominio final Vercel en CORS y volver a desplegar configuración del gateway si Render lo requiere.
-10. Completar las pruebas de producción abajo y registrar las dos URL reales para la entrega.
-
-**Blueprint opcional:** render.paid.example.yaml representa los mismos cinco recursos y sus referencias privadas. CORS queda sync:false para suministrarlo manualmente. autoDeployTrigger:off evita futuros despliegues por push; **no evita el primer despliegue ni el coste al crear/sincronizar un Blueprint**. No se ha aplicado. No ejecutar creación o sincronización sin aprobación. Referencia: [especificación Render](https://render.com/docs/blueprint-spec).
-
-## 7. Validación posterior en producción
-
-1. GET /actuator/health público debe devolver UP, sin stack ni datos sensibles. Confirmar perfil prod y PostgreSQL por logs operativos del Dashboard, sin exponer secretos.
-2. En una base nueva, GET /api/metrics/summary contiene los tres servicios con cero llamadas y tasas/promedio null. Polling no aumenta el total.
-3. POST /api/services/inventory/getStock con params:[{productId:SKU-001}] devuelve stock y requestId; verificar exactamente un log con ese UUID y duración real. Utilizar el JSON completo válido de API_CONTRACT.md.
-4. Crear/consultar pedido y procesar/consultar pago con datos ficticios. SIMULATED_FAILURE/503 es un resultado esperado del negocio y debe generar ERROR; no exigir un fallo por lote ni reintentar POST automáticamente.
-5. Con otros operadores sin ejecutar negocios, medir total, POST /api/metrics/simulate-load y comprobar incremento exacto +50, requestedCalls=completedCalls=50, UUID distintos y métricas consistentes. No exigir cinco fallos: el 10% es probabilidad por pago válido.
-6. Validar filtros combinados, fechas UTC inclusivas, paginación, recentCalls hasta 20 por servicio, gráfica y umbral errorRate >15. Las pruebas deterministas locales cubren los valores exactos.
-7. Desde Vercel, verificar preflight CORS, operación manual, UUID en tabla y polling cada 3 segundos; el origen no autorizado no recibe permiso CORS. CORS no es autenticación.
-8. Reiniciar únicamente monitor-api con autorización y confirmar que los logs permanecen. Los negocios en memoria no ofrecen persistencia de pedidos/pagos al reiniciarlos; esto no es fallo de PostgreSQL.
-9. Revisar memoria, errores y latencia durante simulación. Verificar manejo tipado de 400/404/409/413 y, en pruebas controladas, 503/504. Los errores esperados no deben cerrar procesos.
-
-**Pendientes reales:** aprobación de costes, publicación autorizada de esta adaptación, creación manual Render, build Docker real, PostgreSQL real, URLs, secretos privados y pruebas públicas. TEST_REPORT.md distingue lo ejecutado de lo pendiente. Ningún recurso se ha creado ni contratado.
+No se declarará la entrega productiva terminada hasta disponer de las dos URL reales y esta prueba pública verificada.

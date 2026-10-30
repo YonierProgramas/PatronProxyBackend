@@ -1,0 +1,45 @@
+{
+  "result": "PASS",
+  "manualRequestId": "89019bd7-98fe-480e-a1d3-6c86b910fc52",
+  "batch": {
+    "finishedAt": "2026-10-30T20:52:05.285468738Z",
+    "completedCalls": 50,
+    "successCount": 48,
+    "startedAt": "2026-10-30T20:52:03.145918768Z",
+    "errorCount": 2,
+    "requestedCalls": 50,
+    "batchId": "ace5b22f-29de-4e09-a45e-b5475a7f7884"
+  },
+  "totalAfterBatch": 51,
+  "summary": [
+    {
+      "serviceId": "inventory",
+      "totalCalls": 18,
+      "successCount": 18,
+      "errorCount": 0,
+      "successRate": 100.0,
+      "errorRate": 0.0,
+      "averageDurationMs": 115.05917761111111
+    },
+    {
+      "serviceId": "orders",
+      "totalCalls": 17,
+      "successCount": 17,
+      "errorCount": 0,
+      "successRate": 100.0,
+      "errorRate": 0.0,
+      "averageDurationMs": 51.238932294117646
+    },
+    {
+      "serviceId": "payments",
+      "totalCalls": 16,
+      "successCount": 14,
+      "errorCount": 2,
+      "successRate": 87.5,
+      "errorRate": 12.5,
+      "averageDurationMs": 56.468523875
+    }
+  ],
+  "unauthenticatedBusinessServicesRejected": 3,
+  "internalTokenLogged": false
+}
