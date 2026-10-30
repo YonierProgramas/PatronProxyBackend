@@ -1,0 +1,27 @@
+target/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+*.pid
+data/
+.runtime/
+coverage/
+.DS_Store
+__pycache__/
+*.pyc
+# Private credentials and local tooling
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+credentials*.json
+service-account*.json
+.aws/
+.codex/
+.agents/
+*.mv.db
+*.trace.db

@@ -1,0 +1,43 @@
+{
+  "result": "PASS",
+  "manualRequestId": "219a6327-02fd-4dd7-92bb-e6ea8bb9692a",
+  "batch": {
+    "requestedCalls": 50,
+    "errorCount": 1,
+    "startedAt": "2026-10-30T20:17:26.691509302Z",
+    "successCount": 49,
+    "completedCalls": 50,
+    "finishedAt": "2026-10-30T20:17:30.382156417Z",
+    "batchId": "5e80df7e-4215-4647-bb86-e22aae8efd5f"
+  },
+  "totalAfterBatch": 51,
+  "summary": [
+    {
+      "serviceId": "inventory",
+      "totalCalls": 18,
+      "successCount": 18,
+      "errorCount": 0,
+      "successRate": 100.0,
+      "errorRate": 0.0,
+      "averageDurationMs": 153.63595438888888
+    },
+    {
+      "serviceId": "orders",
+      "totalCalls": 17,
+      "successCount": 17,
+      "errorCount": 0,
+      "successRate": 100.0,
+      "errorRate": 0.0,
+      "averageDurationMs": 121.43834076470588
+    },
+    {
+      "serviceId": "payments",
+      "totalCalls": 16,
+      "successCount": 15,
+      "errorCount": 1,
+      "successRate": 93.75,
+      "errorRate": 6.25,
+      "averageDurationMs": 76.044738125
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "result": "PASS",
+  "persistedLogsAfterRestart": 53,
+  "inventoryMutationAndRestore": true,
+  "orderCreatedAndRetrieved": true,
+  "paymentStatus": 200,
+  "paymentQueryStatus": 200,
+  "corsPreflight": true
+}
