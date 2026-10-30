@@ -1,0 +1,114 @@
+# REVIEW ONLY: paid resources. Do not apply without explicit cost approval.
+# Disabling auto-deploy does not prevent the initial deploy when creating a Blueprint.
+services:
+- type: pserv
+  name: inventory-service
+  runtime: docker
+  repo: https://github.com/YonierProgramas/PatronProxyBackend
+  branch: main
+  region: oregon
+  plan: 0.5c-512mb
+  numInstances: 1
+  dockerfilePath: ./Dockerfile.inventory-service
+  dockerContext: .
+  autoDeployTrigger: 'off'
+  envVars:
+  - key: PORT
+    value: '10000'
+- type: pserv
+  name: order-service
+  runtime: docker
+  repo: https://github.com/YonierProgramas/PatronProxyBackend
+  branch: main
+  region: oregon
+  plan: 0.5c-512mb
+  numInstances: 1
+  dockerfilePath: ./Dockerfile.order-service
+  dockerContext: .
+  autoDeployTrigger: 'off'
+  envVars:
+  - key: PORT
+    value: '10000'
+- type: pserv
+  name: payment-service
+  runtime: docker
+  repo: https://github.com/YonierProgramas/PatronProxyBackend
+  branch: main
+  region: oregon
+  plan: 0.5c-512mb
+  numInstances: 1
+  dockerfilePath: ./Dockerfile.payment-service
+  dockerContext: .
+  autoDeployTrigger: 'off'
+  envVars:
+  - key: PORT
+    value: '10000'
+- type: web
+  name: monitor-api
+  runtime: docker
+  repo: https://github.com/YonierProgramas/PatronProxyBackend
+  branch: main
+  region: oregon
+  plan: 0.5c-512mb
+  numInstances: 1
+  dockerfilePath: ./Dockerfile.monitor-api
+  dockerContext: .
+  autoDeployTrigger: 'off'
+  envVars:
+  - key: PORT
+    value: '10000'
+  - key: SPRING_PROFILES_ACTIVE
+    value: prod
+  - key: CORS_ALLOWED_ORIGINS
+    sync: false
+  - key: INTERNAL_TIMEOUT_MS
+    value: '10000'
+  - key: SIMULATION_COOLDOWN_MS
+    value: '10000'
+  - key: DB_MAX_POOL_SIZE
+    value: '5'
+  - key: INVENTORY_SERVICE_HOSTPORT
+    fromService:
+      type: pserv
+      name: inventory-service
+      property: hostport
+  - key: ORDER_SERVICE_HOSTPORT
+    fromService:
+      type: pserv
+      name: order-service
+      property: hostport
+  - key: PAYMENT_SERVICE_HOSTPORT
+    fromService:
+      type: pserv
+      name: payment-service
+      property: hostport
+  - key: PGHOST
+    fromDatabase:
+      name: proxy-audit-db
+      property: host
+  - key: PGPORT
+    fromDatabase:
+      name: proxy-audit-db
+      property: port
+  - key: PGDATABASE
+    fromDatabase:
+      name: proxy-audit-db
+      property: database
+  - key: SPRING_DATASOURCE_USERNAME
+    fromDatabase:
+      name: proxy-audit-db
+      property: user
+  - key: SPRING_DATASOURCE_PASSWORD
+    fromDatabase:
+      name: proxy-audit-db
+      property: password
+  healthCheckPath: /actuator/health
+databases:
+- name: proxy-audit-db
+  region: oregon
+  plan: 0.1c-256mb
+  databaseName: proxy_audit
+  user: proxy_audit_app
+  diskSizeGB: 1
+  ipAllowList: []
+  postgresMajorVersion: '16'

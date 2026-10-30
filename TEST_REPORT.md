@@ -84,3 +84,11 @@ La primera aceptación de esta fase, con timeout por defecto de 3000 ms y Vitest
 La repetición **PASS** comprobó operación manual, UUID único, lote +50, filtros y errores esperados; el lote observó **50 éxitos y 0 fallos**, resultado posible con probabilidad 0.10 por cada una de las 16 llamadas a pagos. Las pruebas de fallo de pagos y timeout siguen aprobadas con dependencias controladas. Evidencia: [docs/GITHUB_SMOKE_RESULT.json](docs/GITHUB_SMOKE_RESULT.json). Los cuatro procesos se detuvieron correctamente después de la prueba.
 
 Se revisaron los archivos del índice Git: sin .env privados, credenciales, datos H2, logs, target, dist o node_modules. `.env.example` se conserva. Se normalizaron finales de línea con `.gitattributes` (Bash LF, Windows CMD/PowerShell CRLF en checkout) y se verificó `git diff --cached --check`.
+
+## Adaptación Render y preparación de producción
+
+El 30 de octubre de 2026 se ejecutó nuevamente Maven Wrapper verify: **BUILD SUCCESS, 25/25 pruebas**. Se generaron los cuatro JARs. Se verificó el Blueprint con el esquema JSON oficial de Render; cuatro Dockerfiles con contexto raíz, Maven -pl/-am, módulos compartidos y artefactos coherentes; PORT y binding 0.0.0.0; cuatro casos del entrypoint real con ejecutable Java doble (URLs derivadas, prioridad explícita, servicio sin DB y PGPORT requerido). El doble no es una imagen Docker ni una conexión PostgreSQL real.
+
+Evidencia: docs/RENDER_CHECK_RESULT.json. Docker no está instalado: **no se construyeron imágenes Docker**. PostgreSQL y endpoints públicos todavía no se verificaron.
+
+El Blueprint se conserva como **render.paid.example.yaml**, sin descubrimiento automático como render.yaml: describe la topología privada que requiere pago y **no se aplica** bajo la restricción vigente de no seleccionar recursos pagos. No se altera silenciosamente el taller para eludir el coste.

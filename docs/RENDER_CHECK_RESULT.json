@@ -1,0 +1,17 @@
+{
+  "result": "PASS",
+  "blueprintOfficialSchema": "PASS",
+  "dockerfilesCoherence": 4,
+  "rootContextAndSharedModules": "PASS",
+  "portBinding": "PASS",
+  "entrypointCases": 4,
+  "dockerImageBuild": "NOT_RUN_NO_DOCKER",
+  "renderDeployment": "NOT_RUN_FREE_PRIVATE_SERVICES_UNAVAILABLE_AND_CONNECTION_PENDING",
+  "realPostgreSQL": "PENDING",
+  "blueprintFile": "render.paid.example.yaml",
+  "schemaSource": "https://render.com/schema/render.yaml.json",
+  "backendTests": 25,
+  "frontendTests": 20,
+  "backendBuild": "PASS",
+  "frontendTypeScriptAndBuild": "PASS"
+}

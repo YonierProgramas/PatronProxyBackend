@@ -5,7 +5,7 @@
 - Backend: https://github.com/YonierProgramas/PatronProxyBackend
 - Frontend: https://github.com/YonierProgramas/PatronProxyFrontend
 
-Cada proyecto tiene su propio repositorio Git y rama `main`, con sus archivos directamente en la raíz. La carpeta superior no es un repositorio del taller. Railway y Vercel permanecen sin desplegar por instrucción del usuario.
+Cada proyecto tiene su propio repositorio Git y rama `main`, con sus archivos directamente en la raíz. La carpeta superior no es un repositorio del taller. Render y Vercel permanecen sin despliegue verificado; ver DEPLOYMENT_STATUS.md para los bloqueos de conexión y plan.
 
 Origen exclusivo de este proyecto: `https://github.com/YonierProgramas/PatronProxyBackend.git`.
 
@@ -15,4 +15,4 @@ Los archivos de proyecto están directamente en la raíz, sin otra carpeta conte
 
 Verificación antes de publicar: Maven Wrapper verify, 25 pruebas y cuatro JARs ejecutables. Los resultados se registran en TEST_REPORT.md. La confirmación del push se realiza comparando el SHA local con `refs/heads/main` del remoto oficial.
 
-El código fuente no representa un despliegue: no se publican aplicaciones en Railway ni Vercel en esta fase. QA visual, PostgreSQL/Docker, PowerShell y comprobación de URL públicas permanecen como verificaciones separadas.
+El código fuente no representa un despliegue: la publicación de aplicaciones en Render y Vercel depende de resolver conexión y plan conforme a DEPLOYMENT_STATUS.md. QA visual, PostgreSQL/Docker, PowerShell y comprobación de URL públicas permanecen como verificaciones separadas.

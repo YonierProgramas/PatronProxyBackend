@@ -5,7 +5,7 @@
 - Backend: https://github.com/YonierProgramas/PatronProxyBackend
 - Frontend: https://github.com/YonierProgramas/PatronProxyFrontend
 
-Cada proyecto tiene su propio repositorio Git y rama `main`, con sus archivos directamente en la raíz. La carpeta superior no es un repositorio del taller. Railway y Vercel permanecen sin desplegar por instrucción del usuario.
+Cada proyecto tiene su propio repositorio Git y rama `main`, con sus archivos directamente en la raíz. La carpeta superior no es un repositorio del taller. Render y Vercel permanecen sin despliegue verificado; ver DEPLOYMENT_STATUS.md para los bloqueos de conexión y plan.
 
 Proyecto académico individual. Tres microservicios independientes de negocio, un gateway de auditoría y un frontend en un proyecto hermano. Cada aplicación se versiona desde su propia raíz; la carpeta superior no se inicializa como repositorio.
 
@@ -37,6 +37,14 @@ flowchart LR
 | monitor-api | Proxy, clientes HTTP, auditoría JDBC, métricas, filtros y simulación |
 
 El módulo común también comparte soporte HTTP pequeño para mantener respuestas uniformes; no comparte negocio ni almacenes. Los tres negocios son procesos y artefactos distintos. Los datos de negocio viven en memoria segura ante concurrencia y se pierden al reiniciar cada servicio. La auditoría local es persistente y puede sobrevivir a esos reinicios: un log histórico no implica que el pedido o pago siga en memoria.
+
+## Despliegue preparado en Render
+
+La plataforma backend cambia de Railway a **Render**; frontend continúa en Vercel. Se mantienen las cuatro aplicaciones, LoggingProxy, contratos y endpoints. Crear tres Private Services de negocio, un Web Service monitor-api y un Render Postgres, todos en la misma región. Solo monitor-api será público.
+
+`render.paid.example.yaml` describe recursos **de pago** y deja auto-deploy desactivado. No se ha aplicado; su publicación como código fuente fue autorizada por el usuario. El Blueprint requiere revisar costes y completar CORS antes de cualquier creación; aplicarlo puede crear recursos facturables y realizar el primer despliegue aunque auto-deploy esté desactivado.
+
+Dockerfiles usan contexto raíz y Maven `-pl <module> -am`, Java 21 y un entrypoint que deriva URLs HTTP privadas y JDBC desde referencias de Render. Cada aplicación escucha `0.0.0.0` y el valor de `PORT`; monitor-api usa perfil prod y Flyway sobre PostgreSQL, con pool limitado a cinco conexiones. [Guía completa, costes, variables y validación](DEPLOYMENT.md).
 
 ## Requisitos locales
 
@@ -110,4 +118,4 @@ Limitaciones: almacenes y auditoría sin retención automática, API académica 
 - [Guía de sustentación](docs/DEMO.md)
 - [Versiones y fuentes oficiales](docs/VERSIONS.md)
 
-Autor, profesor, URL de API Railway y URL frontend Vercel: **pendientes de completar y verificar**. Los repositorios oficiales ya fueron proporcionados; la entrega completa requiere también las URL de producción verificadas.
+Autor, profesor, URL de API Render y URL frontend Vercel: **pendientes de completar y verificar**. Los repositorios oficiales ya fueron proporcionados; la entrega completa requiere también las URL de producción verificadas.

@@ -27,7 +27,7 @@
 | 21. Responsive y estados | global.css y componentes | tests vacíos/conexión; MANUAL_QA | Implementado; visual manual pendiente |
 | 22. CORS, límites, salud, timeouts | CorsConfiguration, RequestFilter, HttpServiceClient | MonitorWebTest, timeout real, smoke 413 | Implementado; sin login, datos ficticios |
 | 23. Windows y WSL, inicio seguro | tools/manage.py, start/stop .sh/.ps1 | arranque WSL y verificación sintáctica Python/Bash | WSL verificado; PowerShell pendiente |
-| 24. Railway por módulo y PostgreSQL | cuatro Dockerfiles, DEPLOYMENT.md | revisión del contexto raíz | Preparado; Docker/Railway/PostgreSQL sin ejecutar |
+| 24. Render por módulo y PostgreSQL | cuatro Dockerfiles, DEPLOYMENT.md | revisión del contexto raíz | Preparado; Docker/Render/PostgreSQL sin ejecutar |
 | 25. Vercel y orden CORS | vercel.json, frontend/DEPLOYMENT.md | build local de producción | Preparado; publicación pendiente |
 | 26. Pruebas backend | ocho clases de pruebas + smoke.py | Maven verify y TEST_REPORT | Resultados reales documentados |
 | 27. Pruebas frontend y flujo | cuatro suites Vitest, smoke.py | TEST_REPORT frontend/backend | HTTP real verificado; navegador/público pendiente |
@@ -40,7 +40,7 @@
 
 - Nombre del autor y profesor (no inventados).
 - Repositorios oficiales: PatronProxyBackend y PatronProxyFrontend, bajo YonierProgramas. Commits y push autorizados; su resultado se confirma con los SHA de main.
-- Cuenta/proyecto Railway, PostgreSQL, variables privadas, cuatro servicios y API pública.
+- Cuenta/proyecto Render, PostgreSQL, variables privadas, cuatro servicios y API pública.
 - Cuenta/proyecto Vercel, variable URL real y dominio autorizado en CORS.
 - Prueba PostgreSQL y Docker, scripts Windows y QA visual en navegador.
 - URL pública del frontend y API verificadas con operación UUID y lote +50.
